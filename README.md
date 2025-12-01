@@ -67,7 +67,7 @@ python manage.py migrate
 
 ```bash
 # Using Django test runner
-python manage.py test orders_app
+python manage.py test orders_app.tests.test_orders_api
 
 # Or with pytest
 pytest orders_app/tests/
