@@ -1,99 +1,125 @@
-# Orders App
+# Orders API
 
-A DjangoRestFramework-based Orders API with:
+A Django-based REST API for managing orders with multi-tenancy support, idempotency, optimistic locking, and cursor-based pagination.
 
-- Draft orders creation (idempotent)
-- Optimistic locking (versioning)
-- Close orders + transactional outbox
-- Keyset pagination
-- Tenant-based requests (X-Tenant-Id header)
+## 1. Setup
 
----
+### Clone the Repository
 
-## **1. Setup**
-
-### 1️⃣ Clone the repo
 ```bash
 git clone https://github.com/ARSLAN-47/orders_api.git
 cd orders_api
+```
 
+### Create Virtual Environment
 
-2️⃣ Create virtual environment
+```bash
 python -m venv venv
+
 # Linux/Mac
 source venv/bin/activate
+
 # Windows
 venv\Scripts\activate
+```
 
-3️⃣ Install dependencies
+### Install Dependencies
+
+```bash
 pip install -r requirements.txt
+```
 
+## 2. Database Setup
 
-## **2. Database**
-Option 1: Local Postgres
-Create DB: orders_db
-Set environment variable:
-Set environment variables 
-(replace values as needed):
+### Option 1: Local PostgreSQL
+
+1. Create database: `orders_db`
+2. Set environment variables (replace values as needed):
+
+```bash
 export POSTGRES_DB=orders_db
 export POSTGRES_USER=postgres
 export POSTGRES_PASSWORD=postgres
 export POSTGRES_HOST=localhost
 export POSTGRES_PORT=5432
+```
 
-Option 2: Docker Postgres
-(replace values as needed) in compose file for env variables:
+### Option 2: Docker PostgreSQL
+
+1. Update environment variables in `docker-compose.yml` as needed
+2. Run Docker Compose:
+
+```bash
 docker-compose up -d
+```
 
+### Run Migrations
 
-Make migrations:
+```bash
+# Create migrations
 python manage.py makemigrations
 
-Run migrations:
+# Apply migrations
 python manage.py migrate
+```
 
+## 3. Run Tests
 
-3. Run Tests
+```bash
+# Using Django test runner
 python manage.py test orders_app
-# or with pytest
+
+# Or with pytest
 pytest orders_app/tests/
+```
 
+## 4. Run Server
 
-4. Run Server
+```bash
 python manage.py runserver
+```
 
-Server runs on: http://localhost:8000
+Server runs on: [http://localhost:8000](http://localhost:8000)
 
+## 5. Example cURL Requests
 
-5. Example cURL Requests
-Create draft order
+### Create Draft Order
+
+```bash
 curl -X POST http://localhost:8000/orders \
   -H "X-Tenant-Id: shop-1" \
   -H "Idempotency-Key: test-123" \
   -H "Content-Type: application/json" \
   -d '{}'
+```
 
-Confirm order
+### Confirm Order
+
+```bash
 curl -X PATCH http://localhost:8000/orders/<id>/confirm \
   -H "X-Tenant-Id: shop-1" \
   -H "If-Match: 1" \
   -H "Content-Type: application/json" \
   -d '{"totalCents": 1000}'
+```
 
-Close order
+### Close Order
+
+```bash
 curl -X POST http://localhost:8000/orders/<id>/close \
   -H "X-Tenant-Id: shop-1"
+```
 
-List orders with pagination
+### List Orders with Pagination
+
+```bash
 curl http://localhost:8000/orders?limit=10&cursor=<opaque>
+```
 
+## 6. Important Notes
 
-6. Notes
+- **Multi-tenancy**: Tenant middleware checks `X-Tenant-Id` header; exempted paths: `/schema/`, `/docs/`
+- **Idempotency**: Idempotency keys are valid for 1 hour
+- **Optimistic Locking**: Enforced with `If-Match` header for version control
+- **Pagination**: Uses keyset (cursor-based) pagination to avoid duplicates/omissions
 
-Tenant middleware checks X-Tenant-Id; exempted paths: /schema/, /docs/.
-
-Idempotency keys valid for 1 hour.
-
-Optimistic locking enforced with If-Match header.
-
-Pagination uses keyset (cursor) to avoid duplicates/omissions.
